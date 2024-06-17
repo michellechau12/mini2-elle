@@ -8,6 +8,6 @@
 import Foundation
 
 struct BombSiteModel {
-    let bombSitePosition: CGPoint
-    let bombSiteSize: CGSize
+    let position: CGPoint
+    let size: CGSize
 }

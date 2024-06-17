@@ -10,17 +10,29 @@ import GameplayKit
 
 class GameScene: SKScene {
     
+    private var bombSites: [BombSiteModel] = []
+    private let playerCatNode = SKSpriteNode(imageNamed: "player_cat")
+    private let plantButton = SKSpriteNode(imageNamed: "plant_button")
+    private var isBombPlanted = false
+    
     override func didMove(to view: SKView) {
-        if let tileMap = childNode(withName: "Maze") as? SKTileMapNode {
-            giveMapPhysicsBody(map: tileMap)
-        }
+        setupPhysics()
+        setupBombSites()
         setupPlayer()
+        setupPlantButton()
     }
     
-    //Add physic body to map
-    func giveMapPhysicsBody(map: SKTileMapNode) {
-        let tileMap = map // the tile map to be given physics body
+    func setupPhysics() {
+        //contact delegate:
         
+        //fbi node physics body:
+        
+        //terrorist node physics body:
+        
+        //map physics body:
+        let map = childNode(withName: "Maze") as! SKTileMapNode
+        
+        let tileMap = map // the tile map to be given physics body
         let tileSize = tileMap.tileSize // the size of each tile map
         let halfWidth = CGFloat(tileMap.numberOfColumns) / 2.0 * tileSize.width // half width of tile map
         let halfHeight = CGFloat(tileMap.numberOfRows) / 2.0 * tileSize.height // half height of tile map
@@ -52,7 +64,26 @@ class GameScene: SKScene {
                         
                         tileMap.addChild(tileNode)
                     }
+                }
+            }
+        }
+        
+    }
+    
+    // Setup bombsite
+    func setupBombSites() {
+        for child in self.children {
+            if child.name == "BombSite" {
+                if let child = child as? SKSpriteNode {
+                    let bombSitePosition = child.position
+                    let bombSiteSize = child.size
+                    let bombSite = BombSiteModel(
+                        position: bombSitePosition,
+                        size: bombSiteSize)
+                    bombSites.append(bombSite)
                     
+                    //Debugging print:
+                    print("bombsite position is: \(bombSitePosition) and size is: \(bombSiteSize)")
                 }
             }
         }
@@ -60,8 +91,6 @@ class GameScene: SKScene {
     
     // Setup player
     func setupPlayer() {
-        let playerCatNode = SKSpriteNode(imageNamed: "player_cat")
-        
         playerCatNode.size = CGSize(width: 50, height: 50)
         playerCatNode.position = CGPoint(x: -160, y: size.height-550)
         playerCatNode.zPosition = 1
@@ -70,7 +99,74 @@ class GameScene: SKScene {
         playerCatNode.physicsBody?.isDynamic = true
         
         addChild(playerCatNode)
+        
+        // Debugging print:
+        print("Player initial position: \(playerCatNode.position)")
     }
     
+    //Setup plant button
+    func setupPlantButton() {
+        plantButton.size = CGSize(width: 100, height: 100)
+        plantButton.zPosition = 2
+        addChild(plantButton)
+        plantButton.isHidden = true
+    }
+    
+    //Check if player enters the bombsite area
+    func isPlayerInBombSite(playerPosition: CGPoint) -> Bool {
+        for bombSite in bombSites {
+            let bombSiteRect = CGRect(
+                origin: CGPoint(
+                    x: bombSite.position.x - bombSite.size.width/2,
+                    y: bombSite.position.y - bombSite.size.height/2),
+                size: bombSite.size)
+            
+            if bombSiteRect.contains(playerCatNode.position){
+                // Debugging print:
+                print("Player is in bomb site: \(playerCatNode.position)")
+                return true
+            }
+        }
+        return false
+    }
+    
+
+    override func update(_ currentTime: TimeInterval) {
+        //Switch plant button isHidden to false if player enters bomsite and bomb is not planted
+        if isPlayerInBombSite(playerPosition: playerCatNode.position) && !isBombPlanted {
+            plantButton.isHidden = false
+            // Debugging print:
+            print("Plant button is visible")
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else {return}
+        let location = touch.location(in: self)
+        
+        if plantButton.contains(location) && !plantButton.isHidden && !isBombPlanted {
+            let bombNode = SKSpriteNode(imageNamed: "bomb-on")
+            bombNode.size = CGSize(width: 50, height: 50)
+            bombNode.position = playerCatNode.position
+            bombNode.zPosition = 3
+            bombNode.name = "bomb"
+            addChild(bombNode)
+            
+            isBombPlanted = true //Set to true so that player cant place multiple bombs
+            plantButton.isHidden = true // Hide plant button after planting
+            
+            // Debugging print:
+            print("Bomb planted at position: \(bombNode.position)")
+        }
+    }  
 }
 
+//check if bom has been planted
+//    func isBombPlanted() -> Bool {
+//        for child in self.children {
+//            if child.name == "bomb" {
+//                return true
+//            }
+//        }
+//        return false
+//    }
